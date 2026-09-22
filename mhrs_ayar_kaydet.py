@@ -30,6 +30,7 @@ MHRS_VATANDAS_URL = "https://mhrs.gov.tr/vatandas/#/"
 WAIT_TIMEOUT = 30
 PROFILE_DIR = Path(__file__).resolve().parent / "chrome_profile"
 CONFIG_PATH = Path(__file__).resolve().parent / "config.local.ps1"
+CONFIG_EXAMPLE_PATH = Path(__file__).resolve().parent / "config.local.example.ps1"
 
 # Randevu Ara formundaki .ant-select sirasi: 0=Dil, 1=Il, 2=Ilce, 3=Klinik, 4=Hastane
 SELECT_INDEX = {"il": 1, "klinik": 3, "hastane": 4}
@@ -99,6 +100,8 @@ def write_config(il: str, klinik: str, hastane: str) -> None:
         f'$Hastane = "{hastane}"\n'
     )
     CONFIG_PATH.write_text(content, encoding="utf-8-sig")
+    if CONFIG_EXAMPLE_PATH.exists():
+        CONFIG_EXAMPLE_PATH.unlink()
 
 
 def run_ayar_kaydet() -> bool:

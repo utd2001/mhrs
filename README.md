@@ -25,7 +25,7 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 | `MHRS Randevu Kontrolu.bat` | `mhrs_randevu_kontrol.ps1`'i çift tıklamayla çalıştırmak için kısayol. |
 | `MHRS Randevu Baslat.bat` | `mhrs.py`'yi PowerShell'e gerek kalmadan doğrudan çift tıklamayla çalıştırır. |
 | `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). İl/Klinik/Hastane tercihlerinizi tutar; `mhrs_ayar_kaydet.py` tarafından otomatik oluşturulur. |
-| `config.local.example.ps1` | `config.local.ps1` biçimine örnek şablon (referans amaçlı). |
+| `config.local.example.ps1` | `config.local.ps1` biçimine örnek şablon. `mhrs_ayar_kaydet.py` ayarları kaydedince otomatik silinir. |
 | `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. `config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister. |
 | `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler. |
 | `requirements.txt` | Python bağımlılıkları (selenium, webdriver-manager). |
