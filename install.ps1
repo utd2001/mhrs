@@ -1,6 +1,7 @@
 if (-not (Test-Path "$PSScriptRoot\config.local.ps1")) {
-    Copy-Item "$PSScriptRoot\config.local.example.ps1" "$PSScriptRoot\config.local.ps1"
-    Remove-Item "$PSScriptRoot\config.local.example.ps1"
+    Write-Host "config.local.ps1 henuz yok. Once 'python -X utf8 mhrs.py' calistirip"
+    Write-Host "Il/Klinik/Hastane secimlerinizi kaydedin, ardindan bu kurulumu tekrar calistirin."
+    exit 1
 }
 
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `

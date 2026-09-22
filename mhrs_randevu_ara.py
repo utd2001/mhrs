@@ -263,19 +263,22 @@ def ask_yesno_msgbox(title: str, message: str) -> bool:
     return result == IDYES
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="MHRS randevu uygunluk kontrolu")
-    parser.add_argument("--il", required=True, help='Ornek: "İSTANBUL"')
-    parser.add_argument("--klinik", required=True, help='Ornek: "Aile Hekimliği"')
-    parser.add_argument("--hastane", default=None, help='Formdaki Hastane alanini bu metinle doldurur. Ornek: "Fatih Sultan Mehmet"')
-    parser.add_argument("--hekim", default=None, help='Formdaki Hekim alanini bu metinle doldurur. Ornek: "Ad Soyad"')
-    parser.add_argument("--show", action="store_true", help="Tarayiciyi gorunur modda calistir")
-    args = parser.parse_args()
+def run_randevu_ara(
+    il: str,
+    klinik: str,
+    hastane: str | None = None,
+    hekim: str | None = None,
+    show: bool = False,
+) -> None:
+    """Randevu aramasini calistirir; en erken randevuyu msgbox ile bildirir.
 
-    driver = build_driver(headless=not args.show)
+    Onceden mhrs_login.py / mhrs.py ile giris yapilmis ve chrome_profile/
+    dizininin bu klasorde bulunmasi gerekir.
+    """
+    driver = build_driver(headless=not show)
     driver_open = True
     try:
-        text = search_randevu(driver, args.il, args.klinik, hastane=args.hastane, hekim=args.hekim)
+        text = search_randevu(driver, il, klinik, hastane=hastane, hekim=hekim)
         records = parse_results(text)
 
         if not records:
@@ -308,7 +311,7 @@ def main() -> None:
             acilsin_mi = ask_yesno_msgbox("MHRS - En Erken Randevu", mesaj)
             if acilsin_mi:
                 visible_driver = build_driver(headless=False)
-                search_randevu(visible_driver, args.il, args.klinik, hastane=args.hastane, hekim=args.hekim)
+                search_randevu(visible_driver, il, klinik, hastane=hastane, hekim=hekim)
                 # ChromeDriver, kendisine baglanan Python/WebDriver client'i
                 # kapanınca (surec bitince VEYA baglanti kesilince) yonettigi
                 # Chrome penceresini de otomatik kapatir. Pencereyi acik
@@ -335,6 +338,18 @@ def main() -> None:
     finally:
         if driver_open:
             driver.quit()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="MHRS randevu uygunluk kontrolu")
+    parser.add_argument("--il", required=True, help='Ornek: "İSTANBUL"')
+    parser.add_argument("--klinik", required=True, help='Ornek: "Aile Hekimliği"')
+    parser.add_argument("--hastane", default=None, help='Formdaki Hastane alanini bu metinle doldurur. Ornek: "Fatih Sultan Mehmet"')
+    parser.add_argument("--hekim", default=None, help='Formdaki Hekim alanini bu metinle doldurur. Ornek: "Ad Soyad"')
+    parser.add_argument("--show", action="store_true", help="Tarayiciyi gorunur modda calistir")
+    args = parser.parse_args()
+
+    run_randevu_ara(args.il, args.klinik, hastane=args.hastane, hekim=args.hekim, show=args.show)
 
 
 if __name__ == "__main__":

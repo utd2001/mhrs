@@ -2,7 +2,8 @@
 MHRS (Merkezi Hekim Randevu Sistemi) - e-Devlet ile oturum acma ve
 randevu uygunluk kontrolu otomasyonu.
 
-Kullanim:
+Bu dosya mhrs.py tarafindan modul olarak kullanilir (is_logged_in,
+login_with_edevlet). Tek basina da calistirilabilir:
     python mhrs_login.py
 
 Tarayici profili (cerezler dahil) bu klasordeki chrome_profile/ dizininde

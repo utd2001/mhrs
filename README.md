@@ -7,7 +7,7 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 - [Dosyalar](#dosyalar)
 - [Hızlı başlangıç](#hızlı-başlangıç)
 - [Kurulum](#kurulum)
-- [İlk giriş](#i̇lk-giriş)
+- [Ana akış (`mhrs.py`)](#ana-akış-mhrspy)
 - [Randevu arama](#randevu-arama)
   - [Manuel kontrol](#manuel-kontrol)
   - [Otomatik saatlik kontrol](#otomatik-saatlik-kontrol-görev-zamanlayıcı)
@@ -17,14 +17,17 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 
 | Dosya | Görev |
 |---|---|
-| `mhrs_login.py` | Chrome'u kalıcı profil (`chrome_profile/`) ile açar, oturum yoksa e-Devlet ile giriş yaptırır. |
-| `mhrs_randevu_ara.py` | Randevu arama formunu otomatik doldurur, sonuçları listeler, en erken randevuyu msgbox ile gösterir. |
-| `mhrs_randevu_kontrol.ps1` | `mhrs_randevu_ara.py`'yi sabit parametrelerle çalıştıran kısayol scripti. Gerçek İl/Klinik/Hastane değerlerini `config.local.ps1` varsa oradan okur, yoksa genel örnek değerleri kullanır. |
+| `mhrs.py` | **Ana giriş noktası.** Çalıştırıldığında sırayla: gerekiyorsa e-Devlet girişi yaptırır, ayar yoksa Randevu Ara formunu açıp kullanıcının seçimlerini kaydeder, ardından `config.local.ps1`'deki değerlerle randevu aramasını çalıştırır. |
+| `mhrs_login.py` | `mhrs.py`'nin kullandığı modül (oturum kontrolü + e-Devlet girişi). Tek başına da çalıştırılabilir. |
+| `mhrs_ayar_kaydet.py` | `mhrs.py`'nin kullandığı modül. Randevu Ara formunu görünür tarayıcıda açar; İl/Klinik/Hastane'i kullanıcı elle seçer, Enter'a basınca seçilen değerler `config.local.ps1`'e kaydedilir. Tek başına da çalıştırılabilir. |
+| `mhrs_randevu_ara.py` | `mhrs.py`'nin kullandığı modül. Randevu arama formunu otomatik doldurur, sonuçları listeler, en erken randevuyu msgbox ile gösterir. Tek başına da (parametrelerle) çalıştırılabilir. |
+| `mhrs_randevu_kontrol.ps1` | `mhrs.py`'yi çalıştıran kısayol scripti (UTF-8 konsol ayarlarını yapar). |
 | `MHRS Randevu Kontrolu.bat` | `mhrs_randevu_kontrol.ps1`'i çift tıklamayla çalıştırmak için kısayol. |
-| `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). Kendi İl/Klinik/Hastane tercihlerinizi buraya yazın: `$Il = "..."`, `$Klinik = "..."`, `$Hastane = "..."`. |
-| `config.local.example.ps1` | `config.local.ps1` için örnek şablon. Kopyalayıp kendi değerlerinizle doldurun: `Copy-Item config.local.example.ps1 config.local.ps1`. |
-| `install.ps1` | `config.local.ps1` yoksa örnekten oluşturur ve saatlik Görev Zamanlayıcı görevini kurar. |
-| `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler, `config.local.example.ps1`'i geri getirir. |
+| `MHRS Randevu Baslat.bat` | `mhrs.py`'yi PowerShell'e gerek kalmadan doğrudan çift tıklamayla çalıştırır. |
+| `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). İl/Klinik/Hastane tercihlerinizi tutar; `mhrs_ayar_kaydet.py` tarafından otomatik oluşturulur. |
+| `config.local.example.ps1` | `config.local.ps1` biçimine örnek şablon (referans amaçlı). |
+| `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. `config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister. |
+| `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler. |
 | `requirements.txt` | Python bağımlılıkları (selenium, webdriver-manager). |
 | `chrome_profile/` | Kayıtlı tarayıcı oturumu/çerezleri. **Paylaşmayın**, kimlik bilgisi içerir. |
 
@@ -32,11 +35,10 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 
 ```powershell
 pip install -r requirements.txt
-python mhrs_login.py                      # e-Devlet ile bir kez giriş yap
-python -X utf8 mhrs_randevu_ara.py --il "İSTANBUL" --klinik "Aile Hekimliği"
+python -X utf8 mhrs.py
 ```
 
-Detaylar için aşağıdaki bölümlere bakın.
+`mhrs.py` gerekli tüm adımları (giriş, ayar kaydetme, arama) sırayla sizden ister; ilk çalıştırmadan sonra tekrar `python -X utf8 mhrs.py` demeniz yeterlidir.
 
 ## Kurulum
 
@@ -46,33 +48,41 @@ pip install -r requirements.txt
 
 Google Chrome ve Python'ın sistemde kurulu ve `python` komutunun PATH'te olması gerekir. İlk çalıştırmada `webdriver-manager` uygun chromedriver'ı otomatik indirir (internet bağlantısı gerekir).
 
-### Kişisel arama ayarları (`.bat` / `.ps1` kısayolu için)
-
-`MHRS Randevu Kontrolu.bat` dosyasını kullanacaksanız, önce kendi İl/Klinik/Hastane tercihlerinizi tanımlayan bir `config.local.ps1` oluşturun:
+## Ana akış (`mhrs.py`)
 
 ```powershell
-Copy-Item config.local.example.ps1 config.local.ps1
+python -X utf8 mhrs.py
 ```
 
-Sonra `config.local.ps1` içindeki `$Il`, `$Klinik`, `$Hastane` değerlerini kendi aramanıza göre düzenleyin. Bu dosya `.gitignore` ile repo dışında tutulur; oluşturmazsanız script genel örnek değerlerle çalışır.
+`mhrs.py` çalıştırıldığında sırayla:
 
-## İlk giriş
+1. **Giriş kontrolü** — `chrome_profile/` yoksa görünür bir Chrome penceresi açılıp e-Devlet giriş sayfasına yönlendirilir. TC Kimlik No, şifre ve varsa SMS/OTP doğrulaması tamamen tarayıcıda elle girilir (hiçbir kimlik bilgisi terminale veya koda girmez). Giriş tamamlandıktan sonra terminalde Enter'a basılır. Oturum `chrome_profile/` içinde kalıcı olarak saklanır; bir daha bu adımı tekrarlamaya gerek kalmaz (oturum süresi dolana kadar).
+2. **Ayar kontrolü** — `config.local.ps1` yoksa Randevu Ara formu görünür tarayıcıda açılır. İl, Klinik ve Hastane alanlarını kendiniz sitede seçersiniz, ardından terminale dönüp Enter'a basarsınız. O an formda seçili olan değerler otomatik olarak `config.local.ps1` dosyasına kaydedilir; dosyayı elle düzenlemenize gerek kalmaz.
+3. **Randevu arama** — `config.local.ps1`'deki İl/Klinik/Hastane değerleriyle otomatik arama çalıştırılır ([çalışma akışı](#çalışma-akışı) aşağıda anlatılıyor).
 
-```powershell
-python mhrs_login.py
-```
-
-Görünür bir Chrome penceresi açılır ve e-Devlet giriş sayfasına yönlendirilir. TC Kimlik No, şifre ve varsa SMS/OTP doğrulaması tamamen tarayıcıda elle girilir (hiçbir kimlik bilgisi terminale veya koda girmez). Giriş tamamlandıktan sonra terminalde Enter'a basılır. Oturum `chrome_profile/` içinde kalıcı olarak saklanır; bir daha bu adımı tekrarlamaya gerek kalmaz (oturum süresi dolana kadar).
+Ayarları değiştirmek isterseniz `config.local.ps1` dosyasını silip `mhrs.py`'yi tekrar çalıştırmanız yeterlidir; ayar adımı yeniden tetiklenir.
 
 ## Randevu arama
 
-Randevu iki şekilde kontrol edilebilir: elle, istediğiniz anda çalıştırarak (**Manuel kontrol**) veya arka planda saatte bir otomatik çalışan bir görevle (**Otomatik saatlik kontrol**). İkisi de aynı script'i (`mhrs_randevu_ara.py`) ve aynı [çalışma akışını](#çalışma-akışı) kullanır; fark yalnızca nasıl tetiklendiklerindedir.
+Randevu iki şekilde kontrol edilebilir: elle, istediğiniz anda çalıştırarak (**Manuel kontrol**) veya arka planda saatte bir otomatik çalışan bir görevle (**Otomatik saatlik kontrol**).
 
 ### Manuel kontrol
 
-İki yoldan biriyle elle çalıştırılabilir:
+En basit yol `mhrs.py`'yi doğrudan çalıştırmaktır (bkz. [Ana akış](#ana-akış-mhrspy)):
 
-**1. Doğrudan Python komutuyla** — parametreleri her seferinde serbestçe değiştirebilirsiniz. Türkçe karakterlerin (İ, Ö, Ş, Ç, Ğ, Ü) komut satırında doğru okunması için **`-X utf8`** bayrağıyla çalıştırmak gerekir:
+```powershell
+python -X utf8 mhrs.py
+```
+
+`config.local.ps1` zaten varsa giriş/ayar adımları atlanır, doğrudan arama yapılır. `--show` ekleyerek aramayı görünür tarayıcı penceresinde çalıştırabilirsiniz:
+
+```powershell
+python -X utf8 mhrs.py --show
+```
+
+**Kısayolla çalıştırma:** `.\mhrs_randevu_kontrol.ps1` veya `MHRS Randevu Kontrolu.bat` dosyasına çift tıklayarak da aynı akış başlatılabilir.
+
+**İleri düzey — parametrelerle tek seferlik arama:** `mhrs_randevu_ara.py`'yi doğrudan farklı İl/Klinik/Hastane/Hekim değerleriyle çalıştırmak isterseniz (kayıtlı ayarları değiştirmeden):
 
 ```powershell
 python -X utf8 mhrs_randevu_ara.py --il "İSTANBUL" --klinik "Aile Hekimliği" --hastane "Fatih Sultan Mehmet"
@@ -88,16 +98,6 @@ Parametreler:
 | `--hekim` | Hayır | Hekim adını filtreler (kısmi eşleşme). Örn: `"Ad Soyad"` |
 | `--show` | Hayır | Aramayı görünür tarayıcı penceresinde yapar (varsayılan: arka planda/headless). |
 
-**2. Hazır kısayolla** — [Kurulum](#kurulum) adımındaki `config.local.ps1` içine yazdığınız sabit İl/Klinik/Hastane değerleriyle çalışır, parametre girmenize gerek yoktur:
-
-```powershell
-.\mhrs_randevu_kontrol.ps1
-```
-
-veya `MHRS Randevu Kontrolu.bat` dosyasına çift tıklayarak.
-
-> Her iki manuel yol için de önce `mhrs_login.py` ile [ilk girişin](#i̇lk-giriş) yapılmış olması gerekir.
-
 ### Çalışma akışı
 
 1. Kayıtlı profil ile (headless) Chrome açılır, oturumun açık olduğu varsayılır.
@@ -109,9 +109,10 @@ veya `MHRS Randevu Kontrolu.bat` dosyasına çift tıklayarak.
 
 ### Otomatik saatlik kontrol (Görev Zamanlayıcı)
 
-Görev Zamanlayıcı görevi repoyla birlikte gelmez, her makinede elle kurulmalıdır. `install.ps1` çalıştırıldığında önce `config.local.ps1` yoksa `config.local.example.ps1`'den oluşturur (ve örnek dosyayı siler), ardından "MHRS Randevu Kontrolu" adında, kayıt anından itibaren **her saat başı bir kez** çalışan bir görev oluşturur (örn. kayıt 21:21 ise sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün tam saatleri XX:00 değil). `config.local.ps1` içindeki İl/Klinik/Hastane parametreleriyle `mhrs_randevu_ara.py`'yi headless modda çalıştırır ve sonucu mesaj kutusuyla bildirir.
+Görev Zamanlayıcı görevi repoyla birlikte gelmez, her makinede elle kurulmalıdır. Önce `config.local.ps1`'in var olması gerekir (yoksa `install.ps1` sizi önce `mhrs.py`'yi çalıştırmaya yönlendirir). `install.ps1` çalıştırıldığında "MHRS Randevu Kontrolu" adında, kayıt anından itibaren **her saat başı bir kez** çalışan bir görev oluşturur (örn. kayıt 21:21 ise sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün tam saatleri XX:00 değil). Bu görev `mhrs_randevu_kontrol.ps1` üzerinden `mhrs.py`'yi headless modda çalıştırır ve sonucu mesaj kutusuyla bildirir.
 
 ```powershell
+python -X utf8 mhrs.py                                          # once ayarlari kaydedin
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
@@ -138,6 +139,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
 
 ## Bilinen sınırlamalar
 
-- Oturum süresi dolarsa (MHRS tarafında zaman aşımı) `mhrs_login.py` tekrar çalıştırılıp giriş yenilenmelidir.
+- Oturum süresi dolarsa (MHRS tarafında zaman aşımı) `chrome_profile/` klasörünü silip `mhrs.py`'yi tekrar çalıştırarak girişi yenileyin.
 - "Evet" ile açılan görünür pencere açıkken (en fazla 6 saat), aynı `chrome_profile` klasörünü kullanan saatlik görev tetiklenirse profil kilidi çakışması yaşanabilir. Genelde randevu işlemi birkaç dakikada tamamlandığı için bu nadir bir durumdur.
 - MHRS arayüzündeki metin/sınıf adları değişirse (site güncellemesi) form doldurma adımları güncellenmesi gerekebilir.
