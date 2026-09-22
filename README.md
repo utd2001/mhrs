@@ -13,8 +13,8 @@ en erken randevuyu bir mesaj kutusuyla bildiren otomasyon.
 | `mhrs_randevu_kontrol.ps1` | `mhrs_randevu_ara.py`'yi sabit parametrelerle çalıştıran kısayol scripti. Gerçek İl/Klinik/Hastane değerlerini `config.local.ps1` varsa oradan okur, yoksa genel örnek değerleri kullanır. |
 | `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). Kendi İl/Klinik/Hastane tercihlerinizi buraya yazın: `$Il = "..."`, `$Klinik = "..."`, `$Hastane = "..."`. |
 | `config.local.example.ps1` | `config.local.ps1` için örnek şablon. Kopyalayıp kendi değerlerinizle doldurun: `Copy-Item config.local.example.ps1 config.local.ps1`. |
-| `install_task.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. |
-| `uninstall_task.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır. |
+| `install.ps1` | `config.local.ps1` yoksa örnekten oluşturur ve saatlik Görev Zamanlayıcı görevini kurar. |
+| `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler, `config.local.example.ps1`'i geri getirir. |
 | `requirements.txt` | Python bağımlılıkları (selenium, webdriver-manager). |
 | `chrome_profile/` | Kayıtlı tarayıcı oturumu/çerezleri. **Paylaşmayın**, kimlik bilgisi içerir. |
 
@@ -89,15 +89,17 @@ python -X utf8 mhrs_randevu_ara.py --il "İSTANBUL" --klinik "Aile Hekimliği" -
 ## Otomatik saatlik kontrol (Görev Zamanlayıcı)
 
 Görev Zamanlayıcı görevi repoyla birlikte gelmez, her makinede elle
-kurulmalıdır. `install_task.ps1` "MHRS Randevu Kontrolu" adında, kayıt
-anından itibaren **her saat başı bir kez** çalışan bir görev oluşturur
-(örn. kayıt 21:21 ise sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün
-tam saatleri XX:00 değil). `config.local.ps1` içindeki İl/Klinik/Hastane
-parametreleriyle `mhrs_randevu_ara.py`'yi headless modda çalıştırır ve
-sonucu mesaj kutusuyla bildirir.
+kurulmalıdır. `install.ps1` çalıştırıldığında önce `config.local.ps1`
+yoksa `config.local.example.ps1`'den oluşturur (ve örnek dosyayı siler),
+ardından "MHRS Randevu Kontrolu" adında, kayıt anından itibaren **her
+saat başı bir kez** çalışan bir görev oluşturur (örn. kayıt 21:21 ise
+sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün tam saatleri XX:00
+değil). `config.local.ps1` içindeki İl/Klinik/Hastane parametreleriyle
+`mhrs_randevu_ara.py`'yi headless modda çalıştırır ve sonucu mesaj
+kutusuyla bildirir.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\install_task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 Görev yalnızca kullanıcı oturumu açıkken (masaüstü etkileşimli oturumda)
@@ -119,7 +121,7 @@ Enable-ScheduledTask -TaskName "MHRS Randevu Kontrolu"
 Start-ScheduledTask -TaskName "MHRS Randevu Kontrolu"
 
 # Tamamen kaldır
-powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall_task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
 ```
 
 ## Bilinen sınırlamalar
