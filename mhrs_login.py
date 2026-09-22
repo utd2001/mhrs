@@ -12,7 +12,6 @@ calistirmalarda tekrar TC/sifre girmeniz gerekmez.
 
 from __future__ import annotations
 
-import getpass
 import sys
 from pathlib import Path
 
@@ -54,7 +53,7 @@ def is_logged_in(driver: webdriver.Chrome) -> bool:
         return True
 
 
-def login_with_edevlet(driver: webdriver.Chrome, tc_no: str, password: str) -> None:
+def login_with_edevlet(driver: webdriver.Chrome) -> None:
     driver.get(MHRS_VATANDAS_URL)
     wait = WebDriverWait(driver, WAIT_TIMEOUT)
 
@@ -65,23 +64,11 @@ def login_with_edevlet(driver: webdriver.Chrome, tc_no: str, password: str) -> N
     edevlet_button.click()
 
     # giris.turkiye.gov.tr sayfasina yonlendirilmeyi bekle.
-    tc_field = wait.until(
-        EC.presence_of_element_located((By.ID, EDEVLET_TC_FIELD_ID))
-    )
-    tc_field.clear()
-    tc_field.send_keys(tc_no)
+    wait.until(EC.presence_of_element_located((By.ID, EDEVLET_TC_FIELD_ID)))
 
-    password_field = driver.find_element(By.ID, EDEVLET_PASSWORD_FIELD_ID)
-    password_field.clear()
-    password_field.send_keys(password)
-
-    submit_button = driver.find_element(By.CSS_SELECTOR, "button.btn-send")
-    submit_button.click()
-
-    # SMS/OTP dogrulamasi gelirse kullaniciya elle tamamlamasi icin sure taniyoruz.
-    print("Giris denendi. Eger SMS/OTP dogrulama ekrani gelirse, "
-          "tarayicida elle tamamlayip Enter'a basin.")
-    input("Devam etmek icin Enter'a basin...")
+    print("Taraycida e-Devlet giris sayfasi acildi. TC Kimlik No, sifre ve "
+          "varsa SMS/OTP dogrulamasini tarayicida elle tamamlayin.")
+    input("Giris tamamlandiktan sonra devam etmek icin Enter'a basin...")
 
     wait.until(EC.url_contains("mhrs.gov.tr"))
     print("MHRS oturumu acildi.")
@@ -93,14 +80,7 @@ def main() -> None:
         if is_logged_in(driver):
             print("Kayitli profilden oturum zaten acik. Tekrar giris gerekmiyor.")
         else:
-            tc_no = input("TC Kimlik No: ").strip()
-            password = getpass.getpass("e-Devlet Sifresi: ")
-
-            if not tc_no or not password:
-                print("TC Kimlik No ve sifre bos birakilamaz.", file=sys.stderr)
-                sys.exit(1)
-
-            login_with_edevlet(driver, tc_no, password)
+            login_with_edevlet(driver)
 
         input("Islem bitince tarayiciyi kapatmak icin Enter'a basin...")
     except TimeoutException:

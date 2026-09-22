@@ -47,10 +47,12 @@ tutulur; oluşturmazsanız script genel örnek değerlerle çalışır.
 python mhrs_login.py
 ```
 
-TC Kimlik No ve e-Devlet şifresi terminalden sorulur (hiçbir yere kaydedilmez).
-SMS/OTP ekranı gelirse tarayıcıda elle tamamlanır. Giriş sonrası oturum
-`chrome_profile/` içinde kalıcı olarak saklanır; bir daha bu adımı
-tekrarlamaya gerek kalmaz (oturum süresi dolana kadar).
+Görünür bir Chrome penceresi açılır ve e-Devlet giriş sayfasına yönlendirilir.
+TC Kimlik No, şifre ve varsa SMS/OTP doğrulaması tamamen tarayıcıda elle
+girilir (hiçbir kimlik bilgisi terminale veya koda girmez). Giriş
+tamamlandıktan sonra terminalde Enter'a basılır. Oturum `chrome_profile/`
+içinde kalıcı olarak saklanır; bir daha bu adımı tekrarlamaya gerek kalmaz
+(oturum süresi dolana kadar).
 
 ## Randevu arama
 
