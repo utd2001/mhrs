@@ -17,7 +17,7 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 
 | Dosya | Görev |
 |---|---|
-| `mhrs.py` | **Ana giriş noktası.** Çalıştırıldığında sırayla: gerekiyorsa e-Devlet girişi yaptırır, ayar yoksa Randevu Ara formunu açıp kullanıcının seçimlerini kaydeder, ardından `config.local.ps1`'deki değerlerle randevu aramasını çalıştırır. |
+| `mhrs.py` | **Ana giriş noktası.** Çalıştırıldığında sırayla: gerekiyorsa e-Devlet girişi yaptırır, ayar yoksa Randevu Ara formunu açıp kullanıcının seçimlerini kaydeder (ilk kayıtta saatlik görevi de otomatik kurar), ardından `config.local.ps1`'deki değerlerle randevu aramasını çalıştırır. |
 | `mhrs_login.py` | `mhrs.py`'nin kullandığı modül (oturum kontrolü + e-Devlet girişi). Tek başına da çalıştırılabilir. |
 | `mhrs_ayar_kaydet.py` | `mhrs.py`'nin kullandığı modül. Randevu Ara formunu görünür tarayıcıda açar; İl/Klinik/Hastane'i kullanıcı elle seçer, Enter'a basınca seçilen değerler `config.local.ps1`'e kaydedilir. Tek başına da çalıştırılabilir. |
 | `mhrs_randevu_ara.py` | `mhrs.py`'nin kullandığı modül. Randevu arama formunu otomatik doldurur, sonuçları listeler, en erken randevuyu msgbox ile gösterir. Tek başına da (parametrelerle) çalıştırılabilir. |
@@ -26,7 +26,7 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 | `MHRS Randevu Baslat.bat` | `mhrs.py`'yi PowerShell'e gerek kalmadan doğrudan çift tıklamayla çalıştırır. |
 | `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). İl/Klinik/Hastane tercihlerinizi tutar; `mhrs_ayar_kaydet.py` tarafından otomatik oluşturulur. |
 | `config.local.example.ps1` | `config.local.ps1` biçimine örnek şablon. `mhrs_ayar_kaydet.py` ayarları kaydedince otomatik silinir. |
-| `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. `config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister. |
+| `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. `mhrs.py` ayarları ilk kez kaydederken bunu otomatik çağırır; elle de çalıştırılabilir (`config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister). |
 | `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler. |
 | `requirements.txt` | Python bağımlılıkları (selenium, webdriver-manager). |
 | `chrome_profile/` | Kayıtlı tarayıcı oturumu/çerezleri. **Paylaşmayın**, kimlik bilgisi içerir. |
@@ -57,10 +57,10 @@ python -X utf8 mhrs.py
 `mhrs.py` çalıştırıldığında sırayla:
 
 1. **Giriş kontrolü** — `chrome_profile/` yoksa görünür bir Chrome penceresi açılıp e-Devlet giriş sayfasına yönlendirilir. TC Kimlik No, şifre ve varsa SMS/OTP doğrulaması tamamen tarayıcıda elle girilir (hiçbir kimlik bilgisi terminale veya koda girmez). Giriş tamamlandıktan sonra terminalde Enter'a basılır. Oturum `chrome_profile/` içinde kalıcı olarak saklanır; bir daha bu adımı tekrarlamaya gerek kalmaz (oturum süresi dolana kadar).
-2. **Ayar kontrolü** — `config.local.ps1` yoksa Randevu Ara formu görünür tarayıcıda açılır. İl, Klinik ve Hastane alanlarını kendiniz sitede seçersiniz, ardından terminale dönüp Enter'a basarsınız. O an formda seçili olan değerler otomatik olarak `config.local.ps1` dosyasına kaydedilir; dosyayı elle düzenlemenize gerek kalmaz.
+2. **Ayar kontrolü** — `config.local.ps1` yoksa Randevu Ara formu görünür tarayıcıda açılır. İl, Klinik ve Hastane alanlarını kendiniz sitede seçersiniz, ardından terminale dönüp Enter'a basarsınız. O an formda seçili olan değerler otomatik olarak `config.local.ps1` dosyasına kaydedilir; dosyayı elle düzenlemenize gerek kalmaz. Ayarlar ilk kez başarıyla kaydedildiğinde saatlik [Görev Zamanlayıcı görevi](#otomatik-saatlik-kontrol-görev-zamanlayıcı) de otomatik kurulur (`install.ps1` arka planda çalıştırılır).
 3. **Randevu arama** — `config.local.ps1`'deki İl/Klinik/Hastane değerleriyle otomatik arama çalıştırılır ([çalışma akışı](#çalışma-akışı) aşağıda anlatılıyor).
 
-Ayarları değiştirmek isterseniz `config.local.ps1` dosyasını silip `mhrs.py`'yi tekrar çalıştırmanız yeterlidir; ayar adımı yeniden tetiklenir.
+Ayarları değiştirmek isterseniz `config.local.ps1` dosyasını silip `mhrs.py`'yi tekrar çalıştırmanız yeterlidir; ayar adımı (ve görev kurulumu) yeniden tetiklenir.
 
 ## Randevu arama
 
@@ -109,7 +109,9 @@ Parametreler:
 
 ### Otomatik saatlik kontrol (Görev Zamanlayıcı)
 
-Görev Zamanlayıcı görevi repoyla birlikte gelmez, her makinede elle kurulmalıdır. Önce `config.local.ps1`'in var olması gerekir (yoksa `install.ps1` sizi önce `mhrs.py`'yi çalıştırmaya yönlendirir). `install.ps1` çalıştırıldığında "MHRS Randevu Kontrolu" adında, kayıt anından itibaren **her saat başı bir kez** çalışan bir görev oluşturur (örn. kayıt 21:21 ise sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün tam saatleri XX:00 değil). Bu görev `mhrs_randevu_kontrol.ps1` üzerinden `mhrs.py`'yi headless modda çalıştırır ve sonucu mesaj kutusuyla bildirir.
+`mhrs.py` ile ayarları ilk kez kaydettiğinizde ("MHRS Randevu Kontrolu" adlı) saatlik Görev Zamanlayıcı görevi otomatik olarak kurulur; ayrıca bir şey yapmanız gerekmez. Görev kayıt anından itibaren **her saat başı bir kez** çalışır (örn. kayıt 21:21 ise sonraki çalışmalar 22:21, 23:21, ... şeklinde, günün tam saatleri XX:00 değil) ve `mhrs_randevu_kontrol.ps1` üzerinden `mhrs.py`'yi headless modda çalıştırıp sonucu mesaj kutusuyla bildirir.
+
+Görevi elle (yeniden) kurmak isterseniz — örneğin `uninstall.ps1` ile kaldırdıktan sonra `config.local.ps1` hâlâ mevcutsa, otomatik kurulum tetiklenmez çünkü `mhrs.py` sadece ayarları *ilk kez* kaydederken kurar:
 
 ```powershell
 python -X utf8 mhrs.py                                          # once ayarlari kaydedin

@@ -9,7 +9,9 @@ Akis:
        yaptirir (mhrs_login.py).
     2. config.local.ps1 yoksa Randevu Ara formunu tarayicida acar; Il,
        Klinik, Hastane alanlarini kullanici elle secer ve secimler
-       config.local.ps1'e kaydedilir (mhrs_ayar_kaydet.py).
+       config.local.ps1'e kaydedilir (mhrs_ayar_kaydet.py). Kayit
+       basarili olursa saatlik Gorev Zamanlayici gorevi de otomatik
+       kurulur (install.ps1).
     3. config.local.ps1'deki Il/Klinik/Hastane degerleriyle randevu
        aramasini calistirir ve sonucu msgbox ile bildirir
        (mhrs_randevu_ara.py).
@@ -22,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,6 +36,7 @@ from mhrs_ayar_kaydet import PROFILE_DIR, ensure_logged_in, run_ayar_kaydet
 from mhrs_randevu_ara import run_randevu_ara
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config.local.ps1"
+INSTALL_SCRIPT = Path(__file__).resolve().parent / "install.ps1"
 
 _PS1_VAR_RE = re.compile(r'^\$(\w+)\s*=\s*"(.*)"\s*$')
 
@@ -63,6 +67,18 @@ def ensure_login() -> None:
         driver.quit()
 
 
+def install_scheduled_task() -> None:
+    """install.ps1'i calistirip saatlik Gorev Zamanlayici gorevini kurar."""
+    print("Saatlik otomatik kontrol gorevi kuruluyor...")
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(INSTALL_SCRIPT)],
+        cwd=INSTALL_SCRIPT.parent,
+    )
+    if result.returncode != 0:
+        print("Gorev otomatik kurulamadi. Elle kurmak icin:", file=sys.stderr)
+        print("  powershell -NoProfile -ExecutionPolicy Bypass -File .\\install.ps1", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="MHRS randevu otomasyonu")
     parser.add_argument("--show", action="store_true", help="Randevu aramasini gorunur tarayicida calistir")
@@ -75,6 +91,7 @@ def main() -> None:
         if not run_ayar_kaydet():
             print("Ayarlar kaydedilemedi, program sonlandiriliyor.", file=sys.stderr)
             sys.exit(1)
+        install_scheduled_task()
 
     config = read_config()
     il = config.get("Il")
