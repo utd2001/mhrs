@@ -21,13 +21,14 @@ MHRS (Merkezi Hekim Randevu Sistemi) üzerinde e-Devlet ile oturum açıp belirl
 | `mhrs_login.py` | `mhrs.py`'nin kullandığı modül (oturum kontrolü + e-Devlet girişi). Tek başına da çalıştırılabilir. |
 | `mhrs_ayar_kaydet.py` | `mhrs.py`'nin kullandığı modül. Randevu Ara formunu görünür tarayıcıda açar; İl/Klinik/Hastane'i kullanıcı elle seçer, Enter'a basınca seçilen değerler `config.local.ps1`'e kaydedilir. Tek başına da çalıştırılabilir. |
 | `mhrs_randevu_ara.py` | `mhrs.py`'nin kullandığı modül. Randevu arama formunu otomatik doldurur, sonuçları listeler, en erken randevuyu msgbox ile gösterir. Tek başına da (parametrelerle) çalıştırılabilir. |
-| `mhrs_randevu_kontrol.ps1` | `mhrs.py`'yi çalıştıran kısayol scripti (UTF-8 konsol ayarlarını yapar). |
+| `mhrs_common.psm1` | `install.ps1`, `uninstall.ps1` ve `mhrs_randevu_kontrol.ps1`'in ortak kullandığı PowerShell modülü (görev kurma/kaldırma, UTF-8 konsol ayarı, `mhrs.py` çağırma fonksiyonları). |
+| `mhrs_randevu_kontrol.ps1` | `mhrs.py`'yi çalıştıran kısayol scripti (UTF-8 konsol ayarlarını yapar). `mhrs_common.psm1`'i kullanır. |
 | `MHRS Randevu Kontrolu.bat` | `mhrs_randevu_kontrol.ps1`'i çift tıklamayla çalıştırmak için kısayol. |
 | `MHRS Randevu Baslat.bat` | `mhrs.py`'yi PowerShell'e gerek kalmadan doğrudan çift tıklamayla çalıştırır. |
 | `config.local.ps1` | **Repoya dahil değildir** (`.gitignore`). İl/Klinik/Hastane tercihlerinizi tutar; `mhrs_ayar_kaydet.py` tarafından otomatik oluşturulur. |
 | `config.local.example.ps1` | `config.local.ps1` biçimine örnek şablon. `mhrs_ayar_kaydet.py` ayarları kaydedince otomatik silinir. |
-| `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar. `mhrs.py` ayarları ilk kez kaydederken bunu otomatik çağırır; elle de çalıştırılabilir (`config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister). |
-| `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler. |
+| `install.ps1` | Saatlik Görev Zamanlayıcı görevini kurar (`mhrs_common.psm1` üzerinden). `mhrs.py` ayarları ilk kez kaydederken bunu otomatik çağırır; elle de çalıştırılabilir (`config.local.ps1` yoksa önce `mhrs.py`'yi çalıştırmanızı ister). |
+| `uninstall.ps1` | Kurulu Görev Zamanlayıcı görevini kaldırır, `chrome_profile/` ve `config.local.ps1` verilerini siler (`mhrs_common.psm1` üzerinden). |
 | `requirements.txt` | Python bağımlılıkları (selenium, webdriver-manager). |
 | `chrome_profile/` | Kayıtlı tarayıcı oturumu/çerezleri. **Paylaşmayın**, kimlik bilgisi içerir. |
 
